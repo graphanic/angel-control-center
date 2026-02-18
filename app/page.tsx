@@ -23,10 +23,8 @@ export default function Page() {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    console.log("[v0] Page mounting, loading state...")
     setState(loadState())
     setMounted(true)
-    console.log("[v0] Page mounted successfully")
   }, [])
 
   const updateState = useCallback((partial: Partial<AppState>) => {
