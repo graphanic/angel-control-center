@@ -4,167 +4,137 @@ import { useState } from "react"
 import { type AppState, CANON_GATES, edmontonNow, type CanonEntry } from "@/lib/store"
 import { ShieldCheck, AlertTriangle, Check } from "lucide-react"
 
-interface CanonGateProps {
+interface Props {
   state: AppState
   updateState: (partial: Partial<AppState>) => void
 }
 
-export function CanonGate({ state, updateState }: CanonGateProps) {
-  const [selectedIdx, setSelectedIdx] = useState<number>(-1)
-  const [checks, setChecks] = useState<boolean[]>(new Array(10).fill(false))
+export function CanonGate({ state, updateState }: Props) {
+  const [checks, setChecks] = useState<Record<number, boolean>>({})
+  const [selectedIdx, setSelectedIdx] = useState(0)
 
-  const candidates = state.journals.filter(
-    (j) => j.permission === "CANON CANDIDATE"
-  )
+  const candidates = state.journals.filter((e) => e.permission === "CANON CANDIDATE")
 
-  const selected = selectedIdx >= 0 ? candidates[selectedIdx] : null
-  const allPassed = checks.every(Boolean)
-  const ericRatified = checks[9]
-  const passedCount = checks.filter(Boolean).length
-
-  function handleCheck(index: number) {
-    const next = [...checks]
-    next[index] = !next[index]
-    setChecks(next)
+  function toggleCheck(i: number) {
+    setChecks((prev) => ({ ...prev, [i]: !prev[i] }))
   }
 
-  function handlePromote() {
-    if (!selected || !allPassed) return
+  const passedCount = Object.values(checks).filter(Boolean).length
+  const allPassed = passedCount === 10
+
+  function promoteToCanon() {
+    const entry = candidates[selectedIdx]
+    if (!entry) return
 
     const canon: CanonEntry = {
-      entry_id: selected.entry_id,
-      angel: selected.angel,
-      context: selected.context,
-      light: selected.light,
-      pattern_echo: selected.pattern_echo,
-      ratified_at: edmontonNow().toISOString(),
+      entry_id: entry.entry_id,
+      angel: entry.angel,
+      ratified_at: edmontonNow(),
+      context: entry.context,
+      light: entry.light,
+      pattern_echo: entry.pattern_echo,
     }
 
     updateState({
       canon: [...state.canon, canon],
-      council_mirror: `[${edmontonNow().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}] CANON: ${selected.entry_id}`,
+      council_mirror: `[${edmontonNow().slice(11, 16)}] CANON: ${entry.entry_id}`,
     })
-
-    setChecks(new Array(10).fill(false))
-    setSelectedIdx(-1)
+    setChecks({})
   }
 
-  return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <h2 className="text-xl font-medium text-foreground">Canon Gate</h2>
-        <p className="mt-1 text-sm italic text-muted-foreground">
-          10 checks before truth becomes Canon.
-        </p>
-      </div>
-
-      {candidates.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-card/50 py-10 text-center">
+  if (candidates.length === 0) {
+    return (
+      <div className="flex flex-col gap-4">
+        <h2 className="text-lg font-light tracking-wide text-foreground">Canon Gate</h2>
+        <p className="text-sm italic text-muted-foreground">10 checks before truth becomes Canon</p>
+        <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-4">
+          <AlertTriangle className="h-5 w-5 text-gold" />
           <p className="text-sm text-muted-foreground">
-            No Canon Candidates. Mark journal entries as &quot;CANON CANDIDATE&quot; permission tier first.
+            {"No Canon Candidates. Mark journal entries as 'CANON CANDIDATE' first."}
           </p>
         </div>
-      ) : (
-        <>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Select Canon Candidate
-            </label>
-            <select
-              value={selectedIdx}
-              onChange={(e) => {
-                setSelectedIdx(Number(e.target.value))
-                setChecks(new Array(10).fill(false))
-              }}
-              className="rounded-md border border-input bg-muted px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+      </div>
+    )
+  }
+
+  const selected = candidates[selectedIdx]
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h2 className="text-lg font-light tracking-wide text-foreground">Canon Gate</h2>
+        <p className="text-sm italic text-muted-foreground">10 checks before truth becomes Canon</p>
+      </div>
+
+      <label className="flex flex-col gap-1">
+        <span className="text-xs text-muted-foreground">Select Canon Candidate</span>
+        <select
+          value={selectedIdx}
+          onChange={(e) => { setSelectedIdx(Number(e.target.value)); setChecks({}) }}
+          className="rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-teal"
+        >
+          {candidates.map((c, i) => (
+            <option key={c.entry_id} value={i}>{c.entry_id} ({c.angel})</option>
+          ))}
+        </select>
+      </label>
+
+      {selected && (
+        <div className="rounded-lg border border-border bg-card p-4">
+          <p className="mb-1 text-sm"><span className="text-muted-foreground">Entry:</span> {selected.entry_id}</p>
+          <p className="text-sm text-muted-foreground">{selected.context.slice(0, 200)}</p>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-2">
+        {CANON_GATES.map((gate, i) => (
+          <label key={i} className="flex items-start gap-3 rounded-md border border-border bg-card px-4 py-3 cursor-pointer hover:bg-muted transition-colors">
+            <input
+              type="checkbox"
+              checked={!!checks[i]}
+              onChange={() => toggleCheck(i)}
+              className="mt-0.5 h-4 w-4 rounded border-border accent-teal"
+            />
+            <span className="text-sm text-foreground">{gate}</span>
+          </label>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-4">
+        {allPassed ? (
+          <>
+            <ShieldCheck className="h-6 w-6 text-emerald-400" />
+            <span className="text-sm text-emerald-400">All gates passed. Ready for Canon.</span>
+            <button
+              onClick={promoteToCanon}
+              className="ml-auto rounded-lg bg-gold px-6 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90"
             >
-              <option value={-1}>-- Select --</option>
-              {candidates.map((c, i) => (
-                <option key={c.entry_id} value={i}>
-                  {c.entry_id} ({c.angel})
-                </option>
-              ))}
-            </select>
+              Promote to Canon
+            </button>
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {checks[9] === undefined && passedCount === 9
+              ? "Gate 10 requires Eric's explicit ratification"
+              : `${10 - passedCount} gates remaining`}
+          </p>
+        )}
+      </div>
+
+      {state.canon.length > 0 && (
+        <div>
+          <h3 className="mb-3 text-sm font-semibold uppercase tracking-widest text-muted-foreground">Ratified Canon</h3>
+          <div className="flex flex-col gap-2">
+            {state.canon.map((c) => (
+              <div key={c.entry_id} className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
+                <Check className="h-4 w-4 text-gold" />
+                <span className="text-sm text-foreground">{c.entry_id}</span>
+                <span className="text-xs text-muted-foreground">{c.angel}</span>
+                <span className="ml-auto text-xs text-muted-foreground">{c.ratified_at}</span>
+              </div>
+            ))}
           </div>
-
-          {selected && (
-            <div className="rounded-lg border border-border bg-card p-5">
-              <p className="text-sm">
-                <span className="font-medium text-foreground">Entry:</span>{" "}
-                <span className="font-mono text-teal">{selected.entry_id}</span>
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {selected.context.slice(0, 200)}
-              </p>
-
-              <div className="my-4 h-px bg-border" />
-
-              <div className="flex flex-col gap-2">
-                {CANON_GATES.map((gate, i) => (
-                  <label
-                    key={i}
-                    className="flex cursor-pointer items-start gap-3 rounded-md px-3 py-2 transition-colors hover:bg-muted"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checks[i]}
-                      onChange={() => handleCheck(i)}
-                      className="mt-0.5 h-4 w-4 rounded border-border accent-primary"
-                    />
-                    <span className="text-sm text-foreground">{gate}</span>
-                  </label>
-                ))}
-              </div>
-
-              <div className="mt-4">
-                {allPassed ? (
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center gap-2 text-emerald-400">
-                      <ShieldCheck className="h-5 w-5" />
-                      <span className="text-sm font-medium">All gates passed. Ready for Canon.</span>
-                    </div>
-                    <button
-                      onClick={handlePromote}
-                      className="w-full rounded-md bg-gold py-2.5 text-sm font-medium text-secondary-foreground transition-colors hover:bg-gold/90"
-                    >
-                      Promote to Canon
-                    </button>
-                  </div>
-                ) : !ericRatified && passedCount === 9 ? (
-                  <div className="flex items-center gap-2 text-gold">
-                    <AlertTriangle className="h-5 w-5" />
-                    <span className="text-sm">
-                      {"Gate 10 requires Eric's explicit ratification"}
-                    </span>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    {10 - passedCount} gates remaining
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Ratified Canon */}
-          {state.canon.length > 0 && (
-            <div>
-              <h3 className="mb-3 text-lg font-medium text-gold">Ratified Canon</h3>
-              <div className="flex flex-col gap-2">
-                {state.canon.map((c) => (
-                  <div key={c.entry_id} className="rounded-lg border border-gold/20 bg-gold/5 px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-gold" />
-                      <span className="font-mono text-sm text-gold">{c.entry_id}</span>
-                      <span className="text-xs text-muted-foreground">({c.angel})</span>
-                    </div>
-                    <p className="mt-1 text-sm text-muted-foreground">{c.context.slice(0, 120)}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
+        </div>
       )}
     </div>
   )

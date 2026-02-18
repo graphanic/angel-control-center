@@ -1,84 +1,69 @@
 "use client"
 
 import { useState } from "react"
-import { type AppState } from "@/lib/store"
 import { Lock } from "lucide-react"
 
 interface GatekeeperProps {
-  state: AppState
-  updateState: (partial: Partial<AppState>) => void
+  onAuthenticate: () => void
 }
 
-export function Gatekeeper({ state, updateState }: GatekeeperProps) {
+export function Gatekeeper({ onAuthenticate }: GatekeeperProps) {
   const [password, setPassword] = useState("")
-  const [error, setError] = useState(false)
+  const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    setError(false)
+    setError("")
 
-    // Client-side hash verification
-    // In dev mode (no hash configured), any password works
-    const encoder = new TextEncoder()
-    const data = encoder.encode(password)
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data)
-    const hashArray = Array.from(new Uint8Array(hashBuffer))
-    const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("")
-
-    // Check against env var (exposed via API) or allow in dev mode
     try {
       const res = await fetch("/api/verify-gate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ hash: hashHex }),
+        body: JSON.stringify({ password }),
       })
-      const result = await res.json()
+      const data = await res.json()
 
-      if (result.authorized) {
-        updateState({ authenticated: true })
+      if (data.ok) {
+        onAuthenticate()
       } else {
-        setError(true)
+        setError("Access denied.")
       }
     } catch {
-      // If API unavailable, allow access in dev mode
-      updateState({ authenticated: true })
+      // If API fails, allow in dev mode
+      onAuthenticate()
+    } finally {
+      setLoading(false)
     }
-
-    setLoading(false)
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background">
-      <div className="flex flex-col items-center gap-6">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full border border-border bg-card">
-          <Lock className="h-6 w-6 text-muted-foreground" />
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
+      <div className="flex flex-col items-center gap-6 w-full max-w-sm">
+        <div className="flex flex-col items-center gap-3">
+          <div className="text-3xl text-muted-foreground">
+            <Lock className="h-8 w-8" />
+          </div>
+          <p className="text-lg text-muted-foreground tracking-wide">Access Required</p>
         </div>
-        <p className="text-lg tracking-wide text-muted-foreground">
-          Access Required
-        </p>
 
-        <form onSubmit={handleSubmit} className="flex w-72 flex-col gap-3">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full">
           <input
             type="password"
-            placeholder="Enter passphrase"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="rounded-lg border border-input bg-card px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            placeholder="Enter passphrase"
+            className="w-full rounded-lg border border-border bg-card px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-teal"
           />
           <button
             type="submit"
             disabled={loading}
-            className="rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+            className="w-full rounded-lg bg-teal px-4 py-3 font-medium text-white transition-colors hover:bg-teal-light disabled:opacity-50"
           >
             {loading ? "Verifying..." : "Enter"}
           </button>
-          {error && (
-            <p className="text-center text-sm text-destructive">
-              Access denied.
-            </p>
-          )}
+          {error && <p className="text-center text-sm text-destructive">{error}</p>}
         </form>
       </div>
     </div>

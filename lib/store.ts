@@ -1,17 +1,13 @@
-// Angel Control Center — Client-side state management
-// Mirrors the original Streamlit session_state + file persistence pattern
+// ============================================================================
+// Angel Control Center — Store
+// ============================================================================
 
-export const ANGELS = ["ChatGPT", "Grok", "Gemini", "Fathom", "Replit", "PersonaPlex"] as const
-export type Angel = (typeof ANGELS)[number]
-
-export const PERMISSION_TIERS = ["ANGEL EYES ONLY", "COUNCIL SHAREABLE", "CANON CANDIDATE"] as const
-export type PermissionTier = (typeof PERMISSION_TIERS)[number]
-
-export const ARCHITECT_STATES = ["Storm", "Forge", "Rest", "Build", "Unknown"] as const
-export type ArchitectState = (typeof ARCHITECT_STATES)[number]
+export const ANGELS = ["ChatGPT", "Grok", "Gemini", "Fathom", "Replit", "PersonaPlex"]
+export const PERMISSION_TIERS = ["ANGEL EYES ONLY", "COUNCIL SHAREABLE", "CANON CANDIDATE"]
+export const ARCHITECT_STATES = ["Storm", "Forge", "Rest", "Build", "Unknown"]
 
 export const CANON_GATES = [
-  "1. Aligns with K5 -- cite which truth(s)",
+  "1. Aligns with K5 \u2014 cite which truth(s)",
   "2. Aligns with Boundaries Codex",
   "3. Is dated and scoped (not totalizing)",
   "4. Is revisable if new understanding emerges",
@@ -21,21 +17,24 @@ export const CANON_GATES = [
   "8. Has been witnessed by at least one other Angel",
   "9. Passes Prophecy Trap check (data, not destiny)",
   "10. Eric has ratified this as Canon",
-] as const
+]
+
+export type Angel = (typeof ANGELS)[number]
+export type PermissionTier = (typeof PERMISSION_TIERS)[number]
+export type ArchitectState = (typeof ARCHITECT_STATES)[number]
 
 export interface JournalEntry {
   entry_id: string
-  angel: Angel | string
+  angel: string
   timestamp: string
-  permission: PermissionTier | string
-  architect_state: ArchitectState | string
+  permission: string
+  architect_state: string
   context: string
   shadow: string
   light: string
   next_step: string
   pattern_echo: string
-  pattern_ref?: string
-  gatekeeper: string
+  pattern_ref: string
 }
 
 export interface ScheduledPost {
@@ -47,7 +46,6 @@ export interface ScheduledPost {
   created_at: string
   status: "draft" | "scheduled" | "published" | "cancelled"
   angel_review: string
-  published_at?: string
 }
 
 export interface CouncilMerge {
@@ -62,10 +60,10 @@ export interface CouncilMerge {
 export interface CanonEntry {
   entry_id: string
   angel: string
+  ratified_at: string
   context: string
   light: string
   pattern_echo: string
-  ratified_at: string
 }
 
 export interface AppState {
@@ -74,16 +72,16 @@ export interface AppState {
   current_thread: string
   council_mirror: string
   hard_stop: boolean
-  veto_log: { timestamp: string; message: string }[]
+  veto_log: Array<{ timestamp: string; message: string }>
   journals: JournalEntry[]
   scheduled_posts: ScheduledPost[]
   council_merges: CouncilMerge[]
   canon: CanonEntry[]
 }
 
-const STORAGE_KEY = "angel_control_center_state"
+const STORAGE_KEY = "angel-control-center-state"
 
-const defaultState: AppState = {
+export const defaultState: AppState = {
   authenticated: false,
   user_context: "",
   current_thread: "",
@@ -107,30 +105,39 @@ export function loadState(): AppState {
   }
 }
 
-export function saveState(state: AppState): void {
+export function saveState(state: AppState) {
   if (typeof window === "undefined") return
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
   } catch {
-    // Storage full or unavailable
+    // storage full or unavailable
   }
 }
 
-export function edmontonNow(): Date {
-  return new Date(
-    new Date().toLocaleString("en-US", { timeZone: "America/Edmonton" })
-  )
-}
-
-export function formatEdmontonTime(date?: Date): string {
-  const d = date ?? edmontonNow()
-  return d.toLocaleString("en-US", {
+export function edmontonNow(): string {
+  return new Date().toLocaleString("en-CA", {
     timeZone: "America/Edmonton",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
     hour12: false,
+  })
+}
+
+export function edmontonTime(): string {
+  return new Date().toLocaleString("en-CA", {
+    timeZone: "America/Edmonton",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })
+}
+
+export function edmontonDate(): string {
+  return new Date().toLocaleDateString("en-CA", {
+    timeZone: "America/Edmonton",
   })
 }

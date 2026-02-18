@@ -1,6 +1,7 @@
 "use client"
 
-import { type AppState, formatEdmontonTime } from "@/lib/store"
+import { useState, useEffect } from "react"
+import { type AppState, edmontonTime } from "@/lib/store"
 import { LogOut, Circle } from "lucide-react"
 
 interface SidebarProps {
@@ -9,68 +10,61 @@ interface SidebarProps {
 }
 
 export function Sidebar({ state, updateState }: SidebarProps) {
+  const [time, setTime] = useState(edmontonTime())
+
+  useEffect(() => {
+    const interval = setInterval(() => setTime(edmontonTime()), 30000)
+    return () => clearInterval(interval)
+  }, [])
 
   return (
-    <aside className="flex h-full w-72 flex-col border-r border-border bg-card">
-      <div className="flex flex-col gap-5 p-5">
-        <div>
-          <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Current Thread
-          </label>
-          <textarea
-            value={state.current_thread}
-            onChange={(e) => updateState({ current_thread: e.target.value })}
-            placeholder="e.g., Building the post scheduler..."
-            rows={4}
-            className="w-full resize-none rounded-md border border-input bg-muted px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-          />
-        </div>
-
-        <div className="h-px bg-border" />
-
-        <div>
-          <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Architect State
-          </label>
-          <textarea
-            value={state.user_context}
-            onChange={(e) => updateState({ user_context: e.target.value })}
-            placeholder="Build mode, steady energy..."
-            rows={3}
-            className="w-full resize-none rounded-md border border-input bg-muted px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-          />
-        </div>
-
-        <div className="h-px bg-border" />
-
-        <div className="flex flex-col gap-2 text-sm">
-          <p className="text-muted-foreground">
-            <span className="font-medium text-foreground">Time:</span>{" "}
-            {formatEdmontonTime()} Edmonton
-          </p>
-          <p className="flex items-center gap-1.5 text-muted-foreground">
-            <span className="font-medium text-foreground">Status:</span>
-            {state.hard_stop ? (
-              <>
-                <Circle className="h-2.5 w-2.5 fill-destructive text-destructive" />
-                <span className="text-destructive">HARD STOP</span>
-              </>
-            ) : (
-              <>
-                <Circle className="h-2.5 w-2.5 fill-emerald-500 text-emerald-500" />
-                <span className="text-emerald-400">ACTIVE</span>
-              </>
-            )}
-          </p>
-        </div>
+    <aside className="flex w-72 shrink-0 flex-col gap-4 border-r border-border bg-card p-5">
+      <div>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          Current Thread
+        </h3>
+        <textarea
+          value={state.current_thread}
+          onChange={(e) => updateState({ current_thread: e.target.value })}
+          placeholder="What are we working on..."
+          rows={4}
+          className="w-full resize-none rounded-md border border-border bg-background p-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-teal"
+        />
       </div>
 
-      <div className="mt-auto border-t border-border p-4">
+      <div>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          Architect State
+        </h3>
+        <textarea
+          value={state.user_context}
+          onChange={(e) => updateState({ user_context: e.target.value })}
+          placeholder="Mood, fog, intent..."
+          rows={3}
+          className="w-full resize-none rounded-md border border-border bg-background p-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-teal"
+        />
+      </div>
+
+      <div className="mt-auto flex flex-col gap-3 border-t border-border pt-4">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>Edmonton</span>
+          <span className="font-mono">{time}</span>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs">
+          <Circle
+            className={`h-2.5 w-2.5 fill-current ${state.hard_stop ? "text-destructive" : "text-emerald-400"}`}
+          />
+          <span className={state.hard_stop ? "text-destructive" : "text-emerald-400"}>
+            {state.hard_stop ? "HARD STOP" : "ACTIVE"}
+          </span>
+        </div>
+
         <button
           onClick={() => updateState({ authenticated: false })}
-          className="flex w-full items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
+          className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
-          <LogOut className="h-4 w-4" />
+          <LogOut className="h-3.5 w-3.5" />
           Log Out
         </button>
       </div>

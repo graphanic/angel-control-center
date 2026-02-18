@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server"
+import crypto from "crypto"
 
-export async function POST(request: Request) {
-  const { hash } = await request.json()
+export async function POST(req: Request) {
+  const { password } = await req.json()
   const expectedHash = process.env.ANGEL_GATE_HASH
 
-  // If no hash is configured, allow access (dev mode)
+  // No hash configured = dev mode, allow access
   if (!expectedHash) {
-    return NextResponse.json({ authorized: true })
+    return NextResponse.json({ ok: true })
   }
 
-  // Compare hashes
-  const authorized = hash === expectedHash
-  return NextResponse.json({ authorized })
+  const inputHash = crypto.createHash("sha256").update(password || "").digest("hex")
+
+  return NextResponse.json({ ok: inputHash === expectedHash })
 }
