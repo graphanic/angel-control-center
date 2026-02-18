@@ -1,11 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { useAppState } from "@/hooks/use-app-state"
+import { type AppState } from "@/lib/store"
 import { Lock } from "lucide-react"
 
-export function Gatekeeper() {
-  const { updateState } = useAppState()
+interface GatekeeperProps {
+  state: AppState
+  updateState: (partial: Partial<AppState>) => void
+}
+
+export function Gatekeeper({ state, updateState }: GatekeeperProps) {
   const [password, setPassword] = useState("")
   const [error, setError] = useState(false)
   const [loading, setLoading] = useState(false)

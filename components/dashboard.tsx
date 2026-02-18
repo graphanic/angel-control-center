@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useAppState } from "@/hooks/use-app-state"
+import { type AppState } from "@/lib/store"
 import { Sidebar } from "./sidebar"
 import { PostScheduler } from "./tabs/post-scheduler"
 import { Journals } from "./tabs/journals"
@@ -24,8 +24,12 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"]
 
-export function Dashboard() {
-  const { state, updateState } = useAppState()
+interface DashboardProps {
+  state: AppState
+  updateState: (partial: Partial<AppState>) => void
+}
+
+export function Dashboard({ state, updateState }: DashboardProps) {
   const [activeTab, setActiveTab] = useState<TabId>("scheduler")
 
   function handleHardStop() {
@@ -64,7 +68,7 @@ export function Dashboard() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <Sidebar />
+        <Sidebar state={state} updateState={updateState} />
 
         {/* Main content */}
         <main className="flex flex-1 flex-col overflow-hidden">
@@ -116,12 +120,12 @@ export function Dashboard() {
               </div>
             ) : (
               <>
-                {activeTab === "scheduler" && <PostScheduler />}
-                {activeTab === "journals" && <Journals />}
-                {activeTab === "merge" && <MergeBuilder />}
-                {activeTab === "canon" && <CanonGate />}
+                {activeTab === "scheduler" && <PostScheduler state={state} updateState={updateState} />}
+                {activeTab === "journals" && <Journals state={state} updateState={updateState} />}
+                {activeTab === "merge" && <MergeBuilder state={state} updateState={updateState} />}
+                {activeTab === "canon" && <CanonGate state={state} updateState={updateState} />}
                 {activeTab === "notion" && <NotionBrowser />}
-                {activeTab === "settings" && <Settings />}
+                {activeTab === "settings" && <Settings state={state} updateState={updateState} />}
               </>
             )}
           </div>

@@ -1,8 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useAppState } from "@/hooks/use-app-state"
-import { edmontonNow, type ScheduledPost } from "@/lib/store"
+import { type AppState, edmontonNow, type ScheduledPost } from "@/lib/store"
 import { cn } from "@/lib/utils"
 import {
   ChevronDown,
@@ -39,8 +38,12 @@ function statusIcon(status: string) {
   }
 }
 
-export function PostScheduler() {
-  const { state, updateState } = useAppState()
+interface PostSchedulerProps {
+  state: AppState
+  updateState: (partial: Partial<AppState>) => void
+}
+
+export function PostScheduler({ state, updateState }: PostSchedulerProps) {
   const [platform, setPlatform] = useState(PLATFORMS[0])
   const [postType, setPostType] = useState(POST_TYPES[0])
   const [content, setContent] = useState("")

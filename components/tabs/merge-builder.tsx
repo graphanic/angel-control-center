@@ -1,12 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { useAppState } from "@/hooks/use-app-state"
-import { edmontonNow, type CouncilMerge } from "@/lib/store"
+import { type AppState, edmontonNow, type CouncilMerge } from "@/lib/store"
 import { GitMerge } from "lucide-react"
 
-export function MergeBuilder() {
-  const { state, updateState } = useAppState()
+interface MergeBuilderProps {
+  state: AppState
+  updateState: (partial: Partial<AppState>) => void
+}
+
+export function MergeBuilder({ state, updateState }: MergeBuilderProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [summary, setSummary] = useState("")
   const [convergences, setConvergences] = useState("")

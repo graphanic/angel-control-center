@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { useAppState } from "@/hooks/use-app-state"
 import {
+  type AppState,
   ANGELS,
   PERMISSION_TIERS,
   ARCHITECT_STATES,
@@ -14,8 +14,12 @@ import {
 } from "@/lib/store"
 import { ChevronDown, ChevronRight, BookOpen } from "lucide-react"
 
-export function Journals() {
-  const { state, updateState } = useAppState()
+interface JournalsProps {
+  state: AppState
+  updateState: (partial: Partial<AppState>) => void
+}
+
+export function Journals({ state, updateState }: JournalsProps) {
   const [angel, setAngel] = useState<string>(ANGELS[0])
   const [permission, setPermission] = useState<string>(PERMISSION_TIERS[0])
   const [architectState, setArchitectState] = useState<string>(ARCHITECT_STATES[0])

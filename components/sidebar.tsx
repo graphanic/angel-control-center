@@ -1,11 +1,14 @@
 "use client"
 
-import { useAppState } from "@/hooks/use-app-state"
-import { formatEdmontonTime } from "@/lib/store"
+import { type AppState, formatEdmontonTime } from "@/lib/store"
 import { LogOut, Circle } from "lucide-react"
 
-export function Sidebar() {
-  const { state, updateState } = useAppState()
+interface SidebarProps {
+  state: AppState
+  updateState: (partial: Partial<AppState>) => void
+}
+
+export function Sidebar({ state, updateState }: SidebarProps) {
 
   return (
     <aside className="flex h-full w-72 flex-col border-r border-border bg-card">

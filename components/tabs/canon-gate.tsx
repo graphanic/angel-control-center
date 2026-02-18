@@ -1,12 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { useAppState } from "@/hooks/use-app-state"
-import { CANON_GATES, edmontonNow, type CanonEntry } from "@/lib/store"
+import { type AppState, CANON_GATES, edmontonNow, type CanonEntry } from "@/lib/store"
 import { ShieldCheck, AlertTriangle, Check } from "lucide-react"
 
-export function CanonGate() {
-  const { state, updateState } = useAppState()
+interface CanonGateProps {
+  state: AppState
+  updateState: (partial: Partial<AppState>) => void
+}
+
+export function CanonGate({ state, updateState }: CanonGateProps) {
   const [selectedIdx, setSelectedIdx] = useState<number>(-1)
   const [checks, setChecks] = useState<boolean[]>(new Array(10).fill(false))
 

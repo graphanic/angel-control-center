@@ -1,24 +1,64 @@
 "use client"
 
-import useSWR from "swr"
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  type ReactNode,
+} from "react"
 import { type AppState, loadState, saveState } from "@/lib/store"
 
-const STATE_KEY = "angel-state"
+const defaultState: AppState = {
+  authenticated: false,
+  user_context: "",
+  current_thread: "",
+  council_mirror: "",
+  hard_stop: false,
+  veto_log: [],
+  journals: [],
+  scheduled_posts: [],
+  council_merges: [],
+  canon: [],
+}
+
+interface AppStateCtx {
+  state: AppState
+  updateState: (partial: Partial<AppState>) => void
+  mounted: boolean
+}
+
+const Ctx = createContext<AppStateCtx>({
+  state: defaultState,
+  updateState: () => {},
+  mounted: false,
+})
+
+export function AppStateProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<AppState>(defaultState)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setState(loadState())
+    setMounted(true)
+  }, [])
+
+  const updateState = useCallback((partial: Partial<AppState>) => {
+    setState((prev) => {
+      const next = { ...prev, ...partial }
+      saveState(next)
+      return next
+    })
+  }, [])
+
+  return (
+    <Ctx.Provider value={{ state, updateState, mounted }}>
+      {children}
+    </Ctx.Provider>
+  )
+}
 
 export function useAppState() {
-  const { data, mutate } = useSWR<AppState>(STATE_KEY, () => loadState(), {
-    fallbackData: loadState(),
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-  })
-
-  const state = data!
-
-  const updateState = (partial: Partial<AppState>) => {
-    const next = { ...state, ...partial }
-    saveState(next)
-    mutate(next, false)
-  }
-
-  return { state, updateState }
+  return useContext(Ctx)
 }

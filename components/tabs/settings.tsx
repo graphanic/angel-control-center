@@ -1,11 +1,15 @@
 "use client"
 
-import { useAppState } from "@/hooks/use-app-state"
-import { Cog, Check, X, Trash2 } from "lucide-react"
+import { type AppState } from "@/lib/store"
+import { Check, X, Trash2 } from "lucide-react"
 import { useState } from "react"
 
-export function Settings() {
-  const { state, updateState } = useAppState()
+interface SettingsProps {
+  state: AppState
+  updateState: (partial: Partial<AppState>) => void
+}
+
+export function Settings({ state, updateState }: SettingsProps) {
   const [confirmClear, setConfirmClear] = useState(false)
 
   function handleClearData() {
